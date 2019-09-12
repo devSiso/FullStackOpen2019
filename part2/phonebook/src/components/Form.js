@@ -14,7 +14,7 @@ const Form = props => {
     <>
       <form 
         onSubmit={addPerson}>
-        <Header title="Add new" />
+        <Header title="Add new" subheader={true}/>
         <BasicInput title="name" rModel={nameModel} handler={nameHandler} />
         <BasicInput title="number" rModel={numberModel} handler={numberHandler} />
         <SubmitButton text="add" />

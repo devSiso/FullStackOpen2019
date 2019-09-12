@@ -69,7 +69,7 @@ const App = () => {
         nameHandler={handleNameInput}
         numberHandler={handleNumberInput}
         />
-      <Header title="Numbers"/>
+      <Header title="Numbers" subheader={true}/>
       <Persons persons={searchParameter === '' ? persons : filteredPersons} />
     </>
   )
