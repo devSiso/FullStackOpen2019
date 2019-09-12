@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 import Header from './components/Header'
 import Persons from './components/Persons'
 import Filter from './components/Filter'
@@ -10,6 +11,11 @@ const App = () => {
   const [ newName, setNewName ] = useState('');
   const [ newNumber, setNewNumber ] = useState('');
   const [ searchParameter, setSearchParameter ] = useState('');
+  const personsHost = 'http://localhost:3008/persons';
+
+  useEffect(() => {
+    axios.get(personsHost).then(res => setPersons(res.data));
+  },[])
 
   const alreadyExists = () => {
     const verifier  = persons.filter(person => person.name === newName);
