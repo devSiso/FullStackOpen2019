@@ -15,7 +15,7 @@ const App = () => {
 
   useEffect(() => {
     axios.get(personsHost).then(res => setPersons(res.data));
-  },[])
+  },[]);
 
   const alreadyExists = () => {
     const verifier  = persons.filter(person => person.name === newName);
