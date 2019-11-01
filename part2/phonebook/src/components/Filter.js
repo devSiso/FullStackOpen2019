@@ -2,7 +2,7 @@ import React from 'react'
 
 const Filter = ({ text,filter, handleFilterChange }) =>
   <div>
-    {text}: 
+    {`${text}: `}
     <input value={filter} onChange={handleFilterChange} />
   </div>
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import phoneBookService from './services/phonebookService'
 import Header from './components/Header'
 import Persons from './components/Persons'
 import Filter from './components/Filter'
+import Notification from './components/Notification'
 import Form from './components/Form'
 
 const App = () => {
@@ -11,15 +12,17 @@ const App = () => {
   const [ newName, setNewName ] = useState('');
   const [ newNumber, setNewNumber ] = useState('');
   const [ searchParameter, setSearchParameter ] = useState('');
-  const personsHost = 'http://localhost:3008/persons';
+  const [ notificationObject, setNotificationObject ] = useState('');
 
   useEffect(() => {
-    axios.get(personsHost).then(res => setPersons(res.data));
+    phoneBookService.getAll().then(InitialPersons => {
+      setPersons(InitialPersons);
+    })
   },[]);
 
-  const alreadyExists = () => {
-    const verifier  = persons.filter(person => person.name === newName);
-    return verifier.length
+  const getExistentPerson = () => {
+    const existent = persons.find(person => person.name === newName);
+    return {...existent, number: newNumber }
   };
 
   const resetFields = () => {
@@ -47,23 +50,78 @@ const App = () => {
 
   const handlePersonSubmit = event => {
     event.preventDefault();
-    const exists = alreadyExists();
+    const updatedPerson = getExistentPerson();
     const newPerson = {
       name: newName,
       number: newNumber,
-      id: persons.length + 1
+      id: persons.length + 1 || 0
     }
 
-    exists
-    ? alert(`${newName} already exists`)
-    : setPersons(persons.concat(newPerson));
+    if(updatedPerson.id) {
+      const message = `${updatedPerson.name} already exists in the list, do you want to replace the old number?`;
+      const confirm = window.confirm(message);
+
+      if(confirm) {
+        phoneBookService.update(updatedPerson.id, updatedPerson).then(updated => {
+          setNotificationObject({message: `${updatedPerson.name}'s number was updated `, type: 'success'})
+          
+          setPersons(persons.map(person => person.id !== updatedPerson.id ? person : updated));
+        }).catch(err => {
+          setNotificationObject({message: `An error has ocurred while updating ${updatedPerson.name}'s `, type: 'success'})
+          setTimeout(() => {
+            setNotificationObject({});
+          }, 2000);
+        })
+      }
+    } else {
+      phoneBookService.create(newPerson).then(created => {
+        setPersons(persons.concat(created));
+        setNotificationObject({message: `${newPerson.name} was added `, type: 'success'})
+        setTimeout(() => {
+          setNotificationObject({});
+        }, 1500);
+      }).catch(err => {
+        setNotificationObject({message: `An error has ocurrede while creating a new contact`, type: 'success'})
+        setTimeout(() => {
+          setNotificationObject({});
+        }, 1500);
+      });
+    }
     
     resetFields();
   };
 
+  const deletePerson = (person) => {
+    const message = window.confirm(`Delete ${person.name}?`);
+    
+    if(message) {
+      phoneBookService.deletePerson(person.id).then(() => {
+        phoneBookService.getAll().then(response => {
+          setPersons(response);
+          setNotificationObject({message: `${person.name} was removed`, type: 'success'});
+          setTimeout(() => {
+            setNotificationObject({});
+          }, 1500);
+        });
+        }).catch(err => {
+          setNotificationObject({message: `${person.name} has already been removed from server`, type: 'error'});
+          phoneBookService.getAll().then(response => {
+            setPersons(response);
+            setTimeout(() => {
+              setNotificationObject({});
+            }, 1500);
+          });
+      })
+    }
+  }
+
   return (
     <>
       <Header title="Phonebook" />
+      <Notification 
+        message={notificationObject.message}
+        type={notificationObject.type}
+      />
       <Filter
         text="filter shown with"
         filter={searchParameter} 
@@ -76,7 +134,7 @@ const App = () => {
         numberHandler={handleNumberInput}
         />
       <Header title="Numbers" subheader={true}/>
-      <Persons persons={searchParameter === '' ? persons : filteredPersons} />
+      <Persons persons={searchParameter === '' ? persons : filteredPersons}  deleteHandler={props => deletePerson(props)}/>
     </>
   )
 }
